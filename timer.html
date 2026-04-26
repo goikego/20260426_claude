@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>タイマー</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      text-align: center;
+      background: #16213e;
+      border-radius: 20px;
+      padding: 48px 56px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      min-width: 340px;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 500;
+      color: #a0a8c0;
+      margin-bottom: 32px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .display {
+      font-size: 80px;
+      font-weight: 200;
+      letter-spacing: 4px;
+      color: #e0e7ff;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 12px;
+    }
+
+    .display.running { color: #7c83fd; }
+    .display.finished { color: #f87171; }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: #2a2f50;
+      border-radius: 2px;
+      margin-bottom: 32px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #7c83fd;
+      border-radius: 2px;
+      transition: width 0.5s linear;
+      width: 0%;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .input-group label {
+      font-size: 11px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .input-group input {
+      width: 70px;
+      padding: 8px 4px;
+      font-size: 22px;
+      text-align: center;
+      background: #0f3460;
+      border: 1px solid #2a3a5c;
+      border-radius: 8px;
+      color: #e0e7ff;
+      outline: none;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .input-group input:focus { border-color: #7c83fd; }
+
+    .sep { font-size: 28px; color: #4b5563; padding-bottom: 14px; }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    button {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    button:active { transform: scale(0.97); }
+
+    #btnStart {
+      background: #7c83fd;
+      color: #fff;
+      min-width: 100px;
+    }
+
+    #btnStart:hover { opacity: 0.85; }
+
+    #btnReset {
+      background: #2a2f50;
+      color: #a0a8c0;
+    }
+
+    #btnReset:hover { opacity: 0.75; }
+
+    .alert {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #f87171;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>タイマー</h1>
+
+    <div class="display" id="display">00:00:00</div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="input-row">
+      <div class="input-group">
+        <label>時間</label>
+        <input type="number" id="inputH" min="0" max="99" value="0">
+      </div>
+      <span class="sep">:</span>
+      <div class="input-group">
+        <label>分</label>
+        <input type="number" id="inputM" min="0" max="59" value="5">
+      </div>
+      <span class="sep">:</span>
+      <div class="input-group">
+        <label>秒</label>
+        <input type="number" id="inputS" min="0" max="59" value="0">
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button id="btnStart">開始</button>
+      <button id="btnReset">リセット</button>
+    </div>
+
+    <div class="alert" id="alert"></div>
+  </div>
+
+  <script>
+    const display = document.getElementById('display');
+    const fill = document.getElementById('progressFill');
+    const alert = document.getElementById('alert');
+    const btnStart = document.getElementById('btnStart');
+    const btnReset = document.getElementById('btnReset');
+
+    let totalSeconds = 0;
+    let remaining = 0;
+    let interval = null;
+    let running = false;
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function formatTime(s) {
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      return `${pad(h)}:${pad(m)}:${pad(sec)}`;
+    }
+
+    function updateDisplay() {
+      display.textContent = formatTime(remaining);
+      const pct = totalSeconds > 0 ? ((totalSeconds - remaining) / totalSeconds) * 100 : 0;
+      fill.style.width = pct + '%';
+    }
+
+    function finish() {
+      clearInterval(interval);
+      interval = null;
+      running = false;
+      btnStart.textContent = '開始';
+      display.classList.add('finished');
+      alert.textContent = '⏰ 時間になりました！';
+      fill.style.background = '#f87171';
+      // ブラウザ通知
+      if (Notification.permission === 'granted') {
+        new Notification('タイマー終了', { body: '設定した時間が経過しました。' });
+      }
+    }
+
+    function start() {
+      if (running) {
+        // 一時停止
+        clearInterval(interval);
+        interval = null;
+        running = false;
+        btnStart.textContent = '再開';
+        display.classList.remove('running');
+        return;
+      }
+
+      if (remaining === 0) {
+        const h = parseInt(document.getElementById('inputH').value) || 0;
+        const m = parseInt(document.getElementById('inputM').value) || 0;
+        const s = parseInt(document.getElementById('inputS').value) || 0;
+        totalSeconds = h * 3600 + m * 60 + s;
+        if (totalSeconds === 0) return;
+        remaining = totalSeconds;
+        fill.style.background = '#7c83fd';
+        fill.style.width = '0%';
+      }
+
+      running = true;
+      btnStart.textContent = '一時停止';
+      display.classList.add('running');
+      display.classList.remove('finished');
+      alert.textContent = '';
+
+      interval = setInterval(() => {
+        remaining--;
+        updateDisplay();
+        if (remaining <= 0) finish();
+      }, 1000);
+
+      updateDisplay();
+    }
+
+    function reset() {
+      clearInterval(interval);
+      interval = null;
+      running = false;
+      remaining = 0;
+      totalSeconds = 0;
+      btnStart.textContent = '開始';
+      display.textContent = '00:00:00';
+      display.classList.remove('running', 'finished');
+      fill.style.width = '0%';
+      fill.style.background = '#7c83fd';
+      alert.textContent = '';
+    }
+
+    btnStart.addEventListener('click', start);
+    btnReset.addEventListener('click', reset);
+
+    // 通知許可を要求
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  </script>
+</body>
+</html>
