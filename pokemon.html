@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ポケモン図鑑</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    nav {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+
+    nav a {
+      color: #a0a8c0;
+      text-decoration: none;
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      background: #16213e;
+      transition: background 0.15s;
+    }
+
+    nav a:hover { background: #0f3460; }
+    nav a.active { background: #7c83fd; color: #fff; }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 500;
+      color: #a0a8c0;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 32px;
+    }
+
+    .search-row input {
+      flex: 1;
+      padding: 12px 16px;
+      font-size: 16px;
+      background: #16213e;
+      border: 1px solid #2a3a5c;
+      border-radius: 10px;
+      color: #e0e7ff;
+      outline: none;
+    }
+
+    .search-row input:focus { border-color: #7c83fd; }
+
+    .search-row input::placeholder { color: #4b5563; }
+
+    .search-row button {
+      padding: 12px 24px;
+      background: #7c83fd;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .search-row button:hover { opacity: 0.85; }
+
+    .card {
+      background: #16213e;
+      border-radius: 20px;
+      padding: 36px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      display: none;
+    }
+
+    .card.visible { display: block; }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card-header img {
+      width: 120px;
+      height: 120px;
+      image-rendering: pixelated;
+    }
+
+    .card-info { flex: 1; }
+
+    .pokemon-name {
+      font-size: 28px;
+      font-weight: 600;
+      color: #e0e7ff;
+      text-transform: capitalize;
+      margin-bottom: 8px;
+    }
+
+    .pokemon-no {
+      font-size: 13px;
+      color: #4b5563;
+      margin-bottom: 12px;
+    }
+
+    .types {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .type-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .stats { margin-top: 20px; }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .stat-name {
+      font-size: 12px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      width: 80px;
+      flex-shrink: 0;
+    }
+
+    .stat-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: #2a2f50;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .stat-bar {
+      height: 100%;
+      border-radius: 3px;
+      background: #7c83fd;
+      transition: width 0.6s ease;
+    }
+
+    .stat-val {
+      font-size: 13px;
+      color: #a0a8c0;
+      width: 32px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .error {
+      color: #f87171;
+      font-size: 14px;
+      margin-top: 8px;
+      height: 20px;
+    }
+
+    /* Type colors */
+    .type-normal    { background: #6b7280; color: #fff; }
+    .type-fire      { background: #ef4444; color: #fff; }
+    .type-water     { background: #3b82f6; color: #fff; }
+    .type-grass     { background: #22c55e; color: #fff; }
+    .type-electric  { background: #eab308; color: #000; }
+    .type-ice       { background: #67e8f9; color: #000; }
+    .type-fighting  { background: #b45309; color: #fff; }
+    .type-poison    { background: #a855f7; color: #fff; }
+    .type-ground    { background: #d97706; color: #fff; }
+    .type-flying    { background: #818cf8; color: #fff; }
+    .type-psychic   { background: #ec4899; color: #fff; }
+    .type-bug       { background: #84cc16; color: #000; }
+    .type-rock      { background: #78716c; color: #fff; }
+    .type-ghost     { background: #7c3aed; color: #fff; }
+    .type-dragon    { background: #4f46e5; color: #fff; }
+    .type-dark      { background: #374151; color: #fff; }
+    .type-steel     { background: #9ca3af; color: #000; }
+    .type-fairy     { background: #f9a8d4; color: #000; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/">タイマー</a>
+    <a href="/pokemon.html" class="active">ポケモン図鑑</a>
+  </nav>
+
+  <h1>ポケモン図鑑</h1>
+
+  <div class="search-row">
+    <input type="text" id="query" placeholder="名前または番号（例: pikachu, 25）">
+    <button id="btnSearch">検索</button>
+  </div>
+
+  <div class="error" id="error"></div>
+
+  <div class="card" id="card">
+    <div class="card-header">
+      <img id="sprite" src="" alt="">
+      <div class="card-info">
+        <div class="pokemon-no" id="pokemonNo"></div>
+        <div class="pokemon-name" id="pokemonName"></div>
+        <div class="types" id="types"></div>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <script>
+    const STAT_LABELS = {
+      hp: 'HP', attack: 'こうげき', defense: 'ぼうぎょ',
+      'special-attack': 'とくこう', 'special-defense': 'とくぼう', speed: 'すばやさ'
+    };
+
+    async function search() {
+      const q = document.getElementById('query').value.trim().toLowerCase();
+      if (!q) return;
+
+      document.getElementById('error').textContent = '';
+      document.getElementById('card').classList.remove('visible');
+
+      try {
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${q}`);
+        if (!res.ok) throw new Error('見つかりませんでした');
+        const data = await res.json();
+
+        document.getElementById('pokemonNo').textContent = `No. ${String(data.id).padStart(4, '0')}`;
+        document.getElementById('pokemonName').textContent = data.name;
+
+        const sprite = data.sprites.other['official-artwork'].front_default || data.sprites.front_default;
+        document.getElementById('sprite').src = sprite;
+
+        const typesEl = document.getElementById('types');
+        typesEl.innerHTML = data.types.map(t =>
+          `<span class="type-badge type-${t.type.name}">${t.type.name}</span>`
+        ).join('');
+
+        const statsEl = document.getElementById('stats');
+        statsEl.innerHTML = data.stats.map(s => {
+          const label = STAT_LABELS[s.stat.name] || s.stat.name;
+          const pct = Math.min(100, Math.round(s.base_stat / 255 * 100));
+          return `
+            <div class="stat-row">
+              <span class="stat-name">${label}</span>
+              <div class="stat-bar-bg"><div class="stat-bar" style="width:${pct}%"></div></div>
+              <span class="stat-val">${s.base_stat}</span>
+            </div>`;
+        }).join('');
+
+        document.getElementById('card').classList.add('visible');
+      } catch (e) {
+        document.getElementById('error').textContent = '⚠ ' + e.message;
+      }
+    }
+
+    document.getElementById('btnSearch').addEventListener('click', search);
+    document.getElementById('query').addEventListener('keydown', e => {
+      if (e.key === 'Enter') search();
+    });
+  </script>
+</body>
+</html>

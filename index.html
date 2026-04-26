@@ -12,10 +12,34 @@
       background: #1a1a2e;
       color: #eee;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
+      padding: 16px;
     }
+
+    nav {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+    }
+
+    nav a {
+      color: #a0a8c0;
+      text-decoration: none;
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      background: #16213e;
+      transition: background 0.15s;
+    }
+
+    nav a:hover { background: #0f3460; }
+    nav a.active { background: #7c83fd; color: #fff; }
 
     .container {
       text-align: center;
@@ -145,6 +169,10 @@
   </style>
 </head>
 <body>
+  <nav>
+    <a href="/" class="active">タイマー</a>
+    <a href="/pokemon.html">ポケモン図鑑</a>
+  </nav>
   <div class="container">
     <h1>タイマー</h1>
 
